@@ -1,0 +1,18 @@
+@Copyright
+
+* DirectX12 Application Framework
+Copyright (c) 2015 All Rights Reserved: 
+Frank D. Luna
+https://github.com/d3dcoder/d3d12book
+Please comment headers of each source files or git log for details.
+
+*bgm
+WebSite[SHW] ÅuFuyugomoriÅv
+http://shw.in/sozai/etc.php
+[Sept. 2018 access]
+
+*voice
+minamikaze
+https://bowlroll.net/file/27552
+https://minamimana.web.fc2.com/voice_about.html
+[Sept. 2018 access]
