@@ -36,6 +36,7 @@ void SimpleWar::OnKeyboardInput(const GameTimer& gt)
 {
 	const float dt = gt.DeltaTime();
 
+	/*
 	static float changeDirTimer = 1.0f; // timer barriar for oscilating the switch
 	changeDirTimer -= dt; 
 	if (GetAsyncKeyState('D') & 0x8000) {
@@ -46,6 +47,7 @@ void SimpleWar::OnKeyboardInput(const GameTimer& gt)
 			mCamera.SetPosition(mMyX+0.0f, 2.0f, mMyZ-mCurrCameraDir*15.0f);
 		}
 	}
+	*/
 
 	if (GetAsyncKeyState('Z') & 0x8000)
 		if(mExplodeDelay > 5.0f)  mExplodeDelay = 0.5f;
@@ -56,13 +58,13 @@ void SimpleWar::OnKeyboardInput(const GameTimer& gt)
 
 	if (GetAsyncKeyState(VK_LEFT) & 0x8000) {
 		movingKey = true;
-		dx = -5 * dt * mCurrCameraDir;
+		dx = -5 * dt;
 		if (mMyX + dx < FieldNS::MIN_X || mMyX + dx > FieldNS::MAX_X) dx = 0;
 		mCamera.Strafe(dx * mCurrCameraDir);
 	}
 	if (GetAsyncKeyState(VK_RIGHT) & 0x8000) {
 		movingKey = true;
-		dx = 5 * dt * mCurrCameraDir;
+		dx = 5 * dt;
 		if (mMyX + dx < FieldNS::MIN_X || mMyX + dx > FieldNS::MAX_X) dx = 0;
 		mCamera.Strafe(dx * mCurrCameraDir);
 	}
@@ -74,8 +76,8 @@ void SimpleWar::OnKeyboardInput(const GameTimer& gt)
 			if (mMyY + dy < FieldNS::MIN_Y-0.5f || mMyY + dy > FieldNS::MAX_Y) dy = 0;
 		}
 		else{
-			dz = 5 * dt * mCurrCameraDir;
-			if (mMyZ + dz < FieldNS::MIN_Z || mMyZ + dz > FieldNS::MAX_Z) dz = 0;
+			dz = 5 * dt;
+			if (mMyZ + dz < FieldNS::MIN_Z || mMyZ + dz > 0* FieldNS::MAX_Z) dz = 0;
 			mCamera.Walk(dz * mCurrCameraDir);
 		}
 	}
@@ -87,7 +89,7 @@ void SimpleWar::OnKeyboardInput(const GameTimer& gt)
 			if (mMyY + dy < FieldNS::MIN_Y || mMyY + dy > FieldNS::MAX_Y) dy = 0;
 		}
 		else{
-			dz = -5 * dt * mCurrCameraDir;
+			dz = -5 * dt;
 			if (mMyZ + dz < FieldNS::MIN_Z || mMyZ + dz > FieldNS::MAX_Z) dz = 0;
 			mCamera.Walk(dz * mCurrCameraDir);
 		}
@@ -96,7 +98,7 @@ void SimpleWar::OnKeyboardInput(const GameTimer& gt)
 	mMyX += dx;
 	mMyY += dy;
 	mMyZ += dz;
-	int mMyRenderIdx = 25;
+	int mMyRenderIdx = 3;
 	if (movingKey = true) {
 		XMMATRIX transferMatrix = XMMatrixTranslation(mMyX,mMyY,mMyZ);
 		XMStoreFloat4x4(&mAllRitems[mMyRenderIdx]->World, transferMatrix);
@@ -149,8 +151,9 @@ void SimpleWar::BuildMaterials()
 	tile0->MatCBIndex = 1;
 	tile0->DiffuseSrvHeapIndex = 1;
 	tile0->DiffuseAlbedo = XMFLOAT4(0.9f, 0.9f, 0.9f, 1.0f);
+	//tile0->DiffuseAlbedo = XMFLOAT4(0.1f, 0.1f, 0.1f, 1.0f);
 	tile0->FresnelR0 = XMFLOAT3(0.2f, 0.2f, 0.2f);
-	tile0->Roughness = 0.1f;
+	tile0->Roughness = 1.0f;
 
 	auto mirror0 = std::make_unique<Material>();
 	mirror0->Name = "mirror0";
@@ -332,12 +335,13 @@ void SimpleWar::BuildRenderItems()
 		mAllRitems.push_back(std::move(rightSphereRitem));
 	}
 
+	/*
 	auto selfSphereRitem = std::make_unique<RenderItem>();
 	XMMATRIX selfSphereWorld = XMMatrixTranslation(-1.0f, 2.0f, -1.0f);
 	XMStoreFloat4x4(&selfSphereRitem->World, selfSphereWorld);
-	XMStoreFloat4x4(&selfSphereRitem->TexTransform, brickTexTransform);
+	selfSphereRitem->TexTransform = MathHelper::Identity4x4();
 	selfSphereRitem->ObjCBIndex = objCBIndex++;
-	selfSphereRitem->Mat = mMaterials["ice"].get();
+	selfSphereRitem->Mat = mMaterials["mirror0"].get();
 	selfSphereRitem->Geo = mGeometries["shapeGeo"].get();
 	selfSphereRitem->PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 	selfSphereRitem->IndexCount = selfSphereRitem->Geo->DrawArgs["sphere"].IndexCount;
@@ -345,6 +349,7 @@ void SimpleWar::BuildRenderItems()
 	selfSphereRitem->BaseVertexLocation = selfSphereRitem->Geo->DrawArgs["sphere"].BaseVertexLocation;
 	mRitemLayer[(int)RenderLayer::Opaque].push_back(selfSphereRitem.get());
 
+	*/
 	XMFLOAT3 zerof(0.0f,0.0f,0.0f);
 	XMVECTOR zero = XMLoadFloat3(&zerof);
 	BoundingSphere bs;
@@ -352,7 +357,6 @@ void SimpleWar::BuildRenderItems()
 	bs.Radius = 0.5f;
 	player.setBounding(bs);
 
-	mAllRitems.push_back(std::move(selfSphereRitem));
 }
 void SimpleWar::BuildDescriptorHeaps()
 {

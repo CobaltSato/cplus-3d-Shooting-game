@@ -43,7 +43,7 @@ private:
 	float mExplodeDelay;
 	float mMyX = 0.0f;
 	float mMyY = 0.5f;
-	float mMyZ = 0.0f;
+	float mMyZ = -1.0f;
 	float mMyTheta = 0.0f;
 
 	//Enemy mEnemySkull;
