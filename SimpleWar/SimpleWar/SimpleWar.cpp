@@ -30,6 +30,12 @@ bool SimpleWar::Initialize() {
 	if (!GameEngine::Initialize())
 		return false;
 	
+	XMFLOAT3 zerof(0.0f,0.0f,0.0f);
+	XMVECTOR zero = XMLoadFloat3(&zerof);
+	BoundingSphere bs;
+	XMStoreFloat3(&bs.Center, zero);
+	bs.Radius = 1.5f*mCollisionDiscount;
+	mPlayer.setBounding(bs);
 	return true;
 }
 void SimpleWar::OnKeyboardInput(const GameTimer& gt)
@@ -44,7 +50,7 @@ void SimpleWar::OnKeyboardInput(const GameTimer& gt)
 			changeDirTimer = 1.0f;
 			mCurrCameraDir *= -1;
 			mCamera.RotateY(MathHelper::Pi);
-			mCamera.SetPosition(mMyX+0.0f, 2.0f, mMyZ-mCurrCameraDir*15.0f);
+			mCamera.SetPosition(mPlayerX+0.0f, 2.0f, mPlayerZ-mCurrCameraDir*15.0f);
 		}
 	}
 	*/
@@ -59,13 +65,13 @@ void SimpleWar::OnKeyboardInput(const GameTimer& gt)
 	if (GetAsyncKeyState(VK_LEFT) & 0x8000) {
 		movingKey = true;
 		dx = -5 * dt;
-		if (mMyX + dx < FieldNS::MIN_X || mMyX + dx > FieldNS::MAX_X) dx = 0;
+		if (mPlayerX + dx < FieldNS::MIN_X || mPlayerX + dx > FieldNS::MAX_X) dx = 0;
 		mCamera.Strafe(dx * mCurrCameraDir);
 	}
 	if (GetAsyncKeyState(VK_RIGHT) & 0x8000) {
 		movingKey = true;
 		dx = 5 * dt;
-		if (mMyX + dx < FieldNS::MIN_X || mMyX + dx > FieldNS::MAX_X) dx = 0;
+		if (mPlayerX + dx < FieldNS::MIN_X || mPlayerX + dx > FieldNS::MAX_X) dx = 0;
 		mCamera.Strafe(dx * mCurrCameraDir);
 	}
 
@@ -73,11 +79,11 @@ void SimpleWar::OnKeyboardInput(const GameTimer& gt)
 		movingKey = true;
 		if (GetAsyncKeyState(VK_SHIFT) & 0x8000) {
 			dy = 5 * dt;
-			if (mMyY + dy < FieldNS::MIN_Y-0.5f || mMyY + dy > FieldNS::MAX_Y) dy = 0;
+			if (mPlayerY + dy < FieldNS::MIN_Y-0.5f || mPlayerY + dy > FieldNS::MAX_Y) dy = 0;
 		}
 		else{
 			dz = 5 * dt;
-			if (mMyZ + dz < FieldNS::MIN_Z || mMyZ + dz > 0* FieldNS::MAX_Z) dz = 0;
+			//if (mPlayerZ + dz < FieldNS::MIN_Z || mPlayerZ + dz >= 0) dz = 0;
 			mCamera.Walk(dz * mCurrCameraDir);
 		}
 	}
@@ -86,23 +92,23 @@ void SimpleWar::OnKeyboardInput(const GameTimer& gt)
 		movingKey = true;
 		if (GetAsyncKeyState(VK_SHIFT) & 0x8000) {
 			dy = -5 * dt;
-			if (mMyY + dy < FieldNS::MIN_Y || mMyY + dy > FieldNS::MAX_Y) dy = 0;
+			if (mPlayerY + dy < FieldNS::MIN_Y+1.0f || mPlayerY + dy > FieldNS::MAX_Y) dy = 0;
 		}
 		else{
 			dz = -5 * dt;
-			if (mMyZ + dz < FieldNS::MIN_Z || mMyZ + dz > FieldNS::MAX_Z) dz = 0;
+			if (mPlayerZ + dz < FieldNS::MIN_Z || mPlayerZ + dz > FieldNS::MAX_Z) dz = 0;
 			mCamera.Walk(dz * mCurrCameraDir);
 		}
 	}
 
-	mMyX += dx;
-	mMyY += dy;
-	mMyZ += dz;
-	int mMyRenderIdx = 3;
+	mPlayerX += dx;
+	mPlayerY += dy;
+	mPlayerZ += dz;
 	if (movingKey = true) {
-		XMMATRIX transferMatrix = XMMatrixTranslation(mMyX,mMyY,mMyZ);
-		XMStoreFloat4x4(&mAllRitems[mMyRenderIdx]->World, transferMatrix);
-		mAllRitems[mMyRenderIdx]->NumFramesDirty = gNumFrameResources;
+		XMMATRIX transferMatrix = XMMatrixTranslation(mPlayerX,mPlayerY,mPlayerZ);
+		XMStoreFloat4x4(&mAllRitems[mPlayerRenderIdx]->World, 
+		XMMatrixScaling(1.5f, 1.5f, 1.5f)*transferMatrix);
+		mAllRitems[mPlayerRenderIdx]->NumFramesDirty = gNumFrameResources;
 	}
 
 	mCamera.UpdateViewMatrix();
@@ -121,7 +127,7 @@ void SimpleWar::LoadTextures()
 		"tileDiffuseMap",
 		"defaultDiffuseMap",
 		"skyCubeMap",
-		"iceMap"
+		"stoneMap"
 	};
 
 	std::vector<std::wstring> texFilenames =
@@ -130,7 +136,7 @@ void SimpleWar::LoadTextures()
 		L"../../Textures/tile.dds",
 		L"../../Textures/white1x1.dds",
 		L"../../Textures/grasscube1024.dds",
-		L"../../Textures/bricks3.dds"
+		L"../../Textures/bricks.dds"
 	};
 
 	
@@ -179,20 +185,20 @@ void SimpleWar::BuildMaterials()
 	skullMat->FresnelR0 = XMFLOAT3(0.2f, 0.2f, 0.2f);
 	skullMat->Roughness = 0.2f;
 
-	auto iceMat = std::make_unique<Material>();
-	iceMat->Name = "ice";
-	iceMat->MatCBIndex = 5;
-	iceMat->DiffuseSrvHeapIndex = 3;
-	iceMat->DiffuseAlbedo = XMFLOAT4(0.8f, 0.8f, 0.8f, 1.0f);
-	iceMat->FresnelR0 = XMFLOAT3(0.1f, 0.1f, 0.1f);
-	iceMat->Roughness = 0.01f;
+	auto stoneMat = std::make_unique<Material>();
+	stoneMat->Name = "stone";
+	stoneMat->MatCBIndex = 5;
+	stoneMat->DiffuseSrvHeapIndex = 3;
+	stoneMat->DiffuseAlbedo = XMFLOAT4(0.8f, 0.8f, 0.8f, 1.0f);
+	stoneMat->FresnelR0 = XMFLOAT3(0.1f, 0.1f, 0.1f);
+	stoneMat->Roughness = 0.01f;
 
 	mMaterials["bricks0"] = std::move(bricks0);
 	mMaterials["tile0"] = std::move(tile0);
 	mMaterials["mirror0"] = std::move(mirror0);
 	mMaterials["sky"] = std::move(sky);
 	mMaterials["skullMat"] = std::move(skullMat);
-	mMaterials["ice"] = std::move(iceMat);
+	mMaterials["stone"] = std::move(stoneMat);
 }
 
 void SimpleWar::BuildRenderItems()
@@ -227,24 +233,11 @@ void SimpleWar::BuildRenderItems()
 	mRitemLayer[(int)RenderLayer::Opaque].push_back(skullRitem.get());
 	mAllRitems.push_back(std::move(skullRitem));
 
-	auto boxRitem = std::make_unique<RenderItem>();
-	XMStoreFloat4x4(&boxRitem->World, XMMatrixScaling(2.0f, 1.0f, 2.0f)*XMMatrixTranslation(0.0f, 0.5f, 0.0f));
-	XMStoreFloat4x4(&boxRitem->TexTransform, XMMatrixScaling(1.0f, 1.0f, 1.0f));
-	boxRitem->ObjCBIndex = 2;
-	boxRitem->Mat = mMaterials["bricks0"].get();
-	boxRitem->Geo = mGeometries["shapeGeo"].get();
-	boxRitem->PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-	boxRitem->IndexCount = boxRitem->Geo->DrawArgs["box"].IndexCount;
-	boxRitem->StartIndexLocation = boxRitem->Geo->DrawArgs["box"].StartIndexLocation;
-	boxRitem->BaseVertexLocation = boxRitem->Geo->DrawArgs["box"].BaseVertexLocation;
-
-	mRitemLayer[(int)RenderLayer::Opaque].push_back(boxRitem.get());
-	mAllRitems.push_back(std::move(boxRitem));
-
 	auto globeRitem = std::make_unique<RenderItem>();
-	XMStoreFloat4x4(&globeRitem->World, XMMatrixScaling(2.0f, 2.0f, 2.0f)*XMMatrixTranslation(0.0f, 2.0f, 0.0f));
+	XMStoreFloat4x4(&globeRitem->World, XMMatrixTranslation(0.0f, 0.0f, 0.0f));
 	XMStoreFloat4x4(&globeRitem->TexTransform, XMMatrixScaling(1.0f, 1.0f, 1.0f));
-	globeRitem->ObjCBIndex = 3;
+	globeRitem->ObjCBIndex = 2;
+	mPlayerRenderIdx= globeRitem->ObjCBIndex;
 	globeRitem->Mat = mMaterials["mirror0"].get();
 	globeRitem->Geo = mGeometries["shapeGeo"].get();
 	globeRitem->PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
@@ -258,7 +251,7 @@ void SimpleWar::BuildRenderItems()
 	auto gridRitem = std::make_unique<RenderItem>();
 	gridRitem->World = MathHelper::Identity4x4();
 	XMStoreFloat4x4(&gridRitem->TexTransform, XMMatrixScaling(8.0f, 8.0f, 1.0f));
-	gridRitem->ObjCBIndex = 4;
+	gridRitem->ObjCBIndex = 3;
 	gridRitem->Mat = mMaterials["tile0"].get();
 	gridRitem->Geo = mGeometries["shapeGeo"].get();
 	gridRitem->PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
@@ -270,7 +263,7 @@ void SimpleWar::BuildRenderItems()
 	mAllRitems.push_back(std::move(gridRitem));
 
 	XMMATRIX brickTexTransform = XMMatrixScaling(1.5f, 2.0f, 1.0f);
-	UINT objCBIndex = 5;
+	UINT objCBIndex = 4;
 	for (int i = 0; i < 5; ++i)
 	{
 		auto leftCylRitem = std::make_unique<RenderItem>();
@@ -307,7 +300,7 @@ void SimpleWar::BuildRenderItems()
 		XMStoreFloat4x4(&leftSphereRitem->World, leftSphereWorld);
 		leftSphereRitem->TexTransform = MathHelper::Identity4x4();
 		leftSphereRitem->ObjCBIndex = objCBIndex++;
-		leftSphereRitem->Mat = mMaterials["mirror0"].get();
+		leftSphereRitem->Mat = mMaterials["stone"].get();
 		leftSphereRitem->Geo = mGeometries["shapeGeo"].get();
 		leftSphereRitem->PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 		leftSphereRitem->IndexCount = leftSphereRitem->Geo->DrawArgs["sphere"].IndexCount;
@@ -317,7 +310,7 @@ void SimpleWar::BuildRenderItems()
 		XMStoreFloat4x4(&rightSphereRitem->World, rightSphereWorld);
 		rightSphereRitem->TexTransform = MathHelper::Identity4x4();
 		rightSphereRitem->ObjCBIndex = objCBIndex++;
-		rightSphereRitem->Mat = mMaterials["mirror0"].get();
+		rightSphereRitem->Mat = mMaterials["stone"].get();
 		rightSphereRitem->Geo = mGeometries["shapeGeo"].get();
 		rightSphereRitem->PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 		rightSphereRitem->IndexCount = rightSphereRitem->Geo->DrawArgs["sphere"].IndexCount;
@@ -335,27 +328,6 @@ void SimpleWar::BuildRenderItems()
 		mAllRitems.push_back(std::move(rightSphereRitem));
 	}
 
-	/*
-	auto selfSphereRitem = std::make_unique<RenderItem>();
-	XMMATRIX selfSphereWorld = XMMatrixTranslation(-1.0f, 2.0f, -1.0f);
-	XMStoreFloat4x4(&selfSphereRitem->World, selfSphereWorld);
-	selfSphereRitem->TexTransform = MathHelper::Identity4x4();
-	selfSphereRitem->ObjCBIndex = objCBIndex++;
-	selfSphereRitem->Mat = mMaterials["mirror0"].get();
-	selfSphereRitem->Geo = mGeometries["shapeGeo"].get();
-	selfSphereRitem->PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-	selfSphereRitem->IndexCount = selfSphereRitem->Geo->DrawArgs["sphere"].IndexCount;
-	selfSphereRitem->StartIndexLocation = selfSphereRitem->Geo->DrawArgs["sphere"].StartIndexLocation;
-	selfSphereRitem->BaseVertexLocation = selfSphereRitem->Geo->DrawArgs["sphere"].BaseVertexLocation;
-	mRitemLayer[(int)RenderLayer::Opaque].push_back(selfSphereRitem.get());
-
-	*/
-	XMFLOAT3 zerof(0.0f,0.0f,0.0f);
-	XMVECTOR zero = XMLoadFloat3(&zerof);
-	BoundingSphere bs;
-	XMStoreFloat3(&bs.Center, zero);
-	bs.Radius = 0.5f;
-	player.setBounding(bs);
 
 }
 void SimpleWar::BuildDescriptorHeaps()
@@ -378,7 +350,7 @@ void SimpleWar::BuildDescriptorHeaps()
 	auto tileTex = mTextures["tileDiffuseMap"]->Resource;
 	auto whiteTex = mTextures["defaultDiffuseMap"]->Resource;
 	auto skyTex = mTextures["skyCubeMap"]->Resource;
-	auto iceTex = mTextures["iceMap"]->Resource;
+	auto stoneTex = mTextures["stoneMap"]->Resource;
 
 	// first descriptor 0
 	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
@@ -407,9 +379,9 @@ void SimpleWar::BuildDescriptorHeaps()
 	// next descriptor 3
 	hDescriptor.Offset(1, mCbvSrvUavDescriptorSize);
 
-	srvDesc.Format = iceTex->GetDesc().Format;
-	srvDesc.Texture2D.MipLevels = iceTex->GetDesc().MipLevels;
-	md3dDevice->CreateShaderResourceView(iceTex.Get(), &srvDesc, hDescriptor);
+	srvDesc.Format = stoneTex->GetDesc().Format;
+	srvDesc.Texture2D.MipLevels = stoneTex->GetDesc().MipLevels;
+	md3dDevice->CreateShaderResourceView(stoneTex.Get(), &srvDesc, hDescriptor);
 
 	// next descriptor 4
 	hDescriptor.Offset(1, mCbvSrvUavDescriptorSize);
@@ -528,8 +500,8 @@ void SimpleWar::BuildSkullGeometry()
 
 	BoundingBox bounds;
 	const float scale = 0.2f;
-	XMStoreFloat3(&bounds.Center,scale*0.5f*(vMin + vMax));
-	XMStoreFloat3(&bounds.Extents, scale*0.5f*(vMax - vMin));
+	XMStoreFloat3(&bounds.Center,mCollisionDiscount*scale*0.5f*(vMin + vMax));
+	XMStoreFloat3(&bounds.Extents, mCollisionDiscount*scale*0.5f*(vMax - vMin));
 	mEnemySkull.setBounding(bounds);
 
 	fin >> ignore;
@@ -546,7 +518,6 @@ void SimpleWar::BuildSkullGeometry()
 
 	//
 	// Pack the indices of all the meshes into one index buffer.
-	//
 
 	const UINT vbByteSize = (UINT)vertices.size() * sizeof(Vertex);
 
@@ -599,16 +570,16 @@ void SimpleWar::Update(const GameTimer& gt)
 	XMStoreFloat4x4(&mSkullRitem->World, skullScale*skullOffset);
 	mSkullRitem->NumFramesDirty = gNumFrameResources;
 
-	if (player.intersect(mEnemySkull))
+	if (mPlayer.intersect(mEnemySkull))
 		if (mExplodeDelay > 5.0f)  mExplodeDelay = 0.5f;
 
 	mEnemySkull.setPosition(
 		3.0f, 1.0f, 2.0f
 	);
-	player.setPosition(
-		mMyX,
-		mMyY,
-		mMyZ
+	mPlayer.setPosition(
+		mPlayerX,
+		mPlayerY,
+		mPlayerZ
 	);
 
 	// set fence not to make duplicate sounds

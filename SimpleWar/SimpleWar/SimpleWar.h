@@ -40,14 +40,16 @@ public:
 	virtual void CreateRtvAndDsvDescriptorHeaps()override;
 private:
 	int mCurrCameraDir = 1; // tracking camera direction
-	float mExplodeDelay;
-	float mMyX = 0.0f;
-	float mMyY = 0.5f;
-	float mMyZ = -1.0f;
-	float mMyTheta = 0.0f;
+	float mExplodeDelay = 5.1f;
+	float mPlayerX = 0.0f;
+	float mPlayerY = 1.5f;
+	float mPlayerZ = -2.0f;
+	float mPlayerTheta = 0.0f;
+	int mPlayerRenderIdx = 2;
+	const float mCollisionDiscount = 0.85f;
 
 	//Enemy mEnemySkull;
 	CollisionEngine::GameObject mEnemySkull;
-	CollisionEngine::GameObject player; // TODO: ->mPlayer
+	CollisionEngine::GameObject mPlayer; // TODO: ->mPlayer
 };
 #endif
