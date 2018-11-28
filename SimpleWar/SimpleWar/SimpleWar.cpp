@@ -34,17 +34,17 @@ bool SimpleWar::Initialize() {
 	XMVECTOR zero = XMLoadFloat3(&zerof);
 	BoundingSphere bs;
 	XMStoreFloat3(&bs.Center, zero);
-	bs.Radius = 1.5f*mCollisionDiscount;
+	bs.Radius = PLAYER_RADIUS*mCollisionDiscount;
 	mPlayer.setBounding(bs);
 	return true;
 }
 void SimpleWar::OnKeyboardInput(const GameTimer& gt)
 {
-	const float dt = gt.DeltaTime();
+	const float dt_secs = gt.DeltaTime();
 
 	/*
 	static float changeDirTimer = 1.0f; // timer barriar for oscilating the switch
-	changeDirTimer -= dt; 
+	changeDirTimer -= dt_secs; 
 	if (GetAsyncKeyState('D') & 0x8000) {
 		if(changeDirTimer < 0){
 			changeDirTimer = 1.0f;
@@ -64,13 +64,13 @@ void SimpleWar::OnKeyboardInput(const GameTimer& gt)
 
 	if (GetAsyncKeyState(VK_LEFT) & 0x8000) {
 		movingKey = true;
-		dx = -5 * dt;
+		dx = -5 * dt_secs;
 		if (mPlayerX + dx < FieldNS::MIN_X || mPlayerX + dx > FieldNS::MAX_X) dx = 0;
 		mCamera.Strafe(dx * mCurrCameraDir);
 	}
 	if (GetAsyncKeyState(VK_RIGHT) & 0x8000) {
 		movingKey = true;
-		dx = 5 * dt;
+		dx = 5 * dt_secs;
 		if (mPlayerX + dx < FieldNS::MIN_X || mPlayerX + dx > FieldNS::MAX_X) dx = 0;
 		mCamera.Strafe(dx * mCurrCameraDir);
 	}
@@ -78,11 +78,11 @@ void SimpleWar::OnKeyboardInput(const GameTimer& gt)
 	if (GetAsyncKeyState(VK_UP) & 0x8000) {
 		movingKey = true;
 		if (GetAsyncKeyState(VK_SHIFT) & 0x8000) {
-			dy = 5 * dt;
+			dy = 5 * dt_secs;
 			if (mPlayerY + dy < FieldNS::MIN_Y-0.5f || mPlayerY + dy > FieldNS::MAX_Y) dy = 0;
 		}
 		else{
-			dz = 5 * dt;
+			dz = 5 * dt_secs;
 			//if (mPlayerZ + dz < FieldNS::MIN_Z || mPlayerZ + dz >= 0) dz = 0;
 			mCamera.Walk(dz * mCurrCameraDir);
 		}
@@ -91,11 +91,11 @@ void SimpleWar::OnKeyboardInput(const GameTimer& gt)
 	if (GetAsyncKeyState(VK_DOWN) & 0x8000) {
 		movingKey = true;
 		if (GetAsyncKeyState(VK_SHIFT) & 0x8000) {
-			dy = -5 * dt;
+			dy = -5 * dt_secs;
 			if (mPlayerY + dy < FieldNS::MIN_Y+1.0f || mPlayerY + dy > FieldNS::MAX_Y) dy = 0;
 		}
 		else{
-			dz = -5 * dt;
+			dz = -5 * dt_secs;
 			if (mPlayerZ + dz < FieldNS::MIN_Z || mPlayerZ + dz > FieldNS::MAX_Z) dz = 0;
 			mCamera.Walk(dz * mCurrCameraDir);
 		}
@@ -107,7 +107,7 @@ void SimpleWar::OnKeyboardInput(const GameTimer& gt)
 	if (movingKey = true) {
 		XMMATRIX transferMatrix = XMMatrixTranslation(mPlayerX,mPlayerY,mPlayerZ);
 		XMStoreFloat4x4(&mAllRitems[mPlayerRenderIdx]->World, 
-		XMMatrixScaling(1.5f, 1.5f, 1.5f)*transferMatrix);
+		XMMatrixScaling(PLAYER_RADIUS, PLAYER_RADIUS, PLAYER_RADIUS)*transferMatrix);
 		mAllRitems[mPlayerRenderIdx]->NumFramesDirty = gNumFrameResources;
 	}
 

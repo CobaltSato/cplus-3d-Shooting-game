@@ -46,6 +46,7 @@ private:
 	float mPlayerZ = -2.0f;
 	float mPlayerTheta = 0.0f;
 	int mPlayerRenderIdx = 2;
+	const float PLAYER_RADIUS = 1.5f;
 	const float mCollisionDiscount = 0.85f;
 
 	//Enemy mEnemySkull;
