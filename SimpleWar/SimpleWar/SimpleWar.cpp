@@ -6,6 +6,9 @@ const int gNumFrameResources = 3;
 int mMessageRId;
 int testLife = 3;
 
+//***************************************************************************************
+// Starting point for a Windows application.
+//***************************************************************************************
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance,
 	PSTR cmdLine, int showCmd)
 {
@@ -58,11 +61,7 @@ void SimpleWar::OnKeyboardInput(const GameTimer& gt)
 	*/
 
 	if (GetAsyncKeyState('Z') & 0x8000) {
-		if (mExplodeDelay_secs > 5.0f) {
-			mExplodeDelay_secs = 0.5f;
-			testLife--;
-			if (testLife < 0) testLife = 0;
-		}
+		setExploSound();
 	}
 
 	
@@ -117,26 +116,33 @@ void SimpleWar::OnKeyboardInput(const GameTimer& gt)
 		XMMatrixScaling(PLAYER_RADIUS, PLAYER_RADIUS, PLAYER_RADIUS)*transferMatrix);
 		mAllRitems[mPlayerRenderIdx]->NumFramesDirty = gNumFrameResources;
 	}
+	UpdateDashboard();
 
-	transferMatrix = XMMatrixTranslation(mPlayerX, 6.5f, mPlayerZ - 5.0f);
+	
+	mCamera.UpdateViewMatrix();
+}
+
+void SimpleWar::UpdateDashboard() {
+	XMMATRIX transferMatrix = XMMatrixTranslation(mPlayerX, 7.1f, mPlayerZ - 5.0f);
 	XMStoreFloat4x4(&mAllRitems[mMessageRId]->World,
-		XMMatrixScaling(5.0, 2.0f, 0.1f)*transferMatrix);
+		XMMatrixScaling(6.25f, 1.5f, 0.1f)*transferMatrix);
 	mAllRitems[mMessageRId]->NumFramesDirty = gNumFrameResources;
 
 
-	transferMatrix = XMMatrixTranslation(mPlayerX - 3, 7.0f, mPlayerZ - 5.9f);
-	XMStoreFloat4x4(&mAllRitems[mMessageRId + 1]->World,
-		XMMatrixScaling(2.0, 2.0f, 0.00f)*transferMatrix);
-	mAllRitems[mMessageRId + 1]->NumFramesDirty = gNumFrameResources;
+	int playerHealthRId = mMessageRId + 1;
+	transferMatrix = XMMatrixTranslation(mPlayerX - 2.0f + testLife*0.35f, 6.5f, mPlayerZ - 5.9f);
+	XMStoreFloat4x4(&mAllRitems[playerHealthRId]->World,
+		XMMatrixScaling(testLife*0.7f, 0.4f, 0.01f)*transferMatrix);
+	mAllRitems[playerHealthRId]->NumFramesDirty = gNumFrameResources;
 
-	transferMatrix = XMMatrixTranslation(mPlayerX + 3, 7.0f, mPlayerZ - 5.9f);
-	XMStoreFloat4x4(&mAllRitems[mMessageRId + 2]->World,
-		XMMatrixScaling(testLife*1.0f, 2.0f, 0.01f)*transferMatrix);
-	mAllRitems[mMessageRId + 2]->NumFramesDirty = gNumFrameResources;
+	int enemyHealthRId = playerHealthRId + 1;
+	transferMatrix = XMMatrixTranslation(mPlayerX +0.25f +testLife*0.35f ,6.5f, mPlayerZ - 5.9f);
+	XMStoreFloat4x4(&mAllRitems[enemyHealthRId]->World,
+		XMMatrixScaling(testLife*0.7f, 0.4f, 0.01f)*transferMatrix);
+	mAllRitems[enemyHealthRId]->NumFramesDirty = gNumFrameResources;
 
-
-	mCamera.UpdateViewMatrix();
 }
+
 
 void SimpleWar::OnMouseMove(WPARAM btnState, int x, int y) {
 	mLastMousePos.x = x;
@@ -152,7 +158,9 @@ void SimpleWar::LoadTextures()
 		"defaultDiffuseMap",
 		"skyCubeMap",
 		"stoneMap",
-		"dashboardMap" // ##
+		"dashboardMap",
+		"playerHealthMap",
+		"enemyHealthMap"
 	};
 
 	std::vector<std::wstring> texFilenames =
@@ -162,7 +170,9 @@ void SimpleWar::LoadTextures()
 		L"../../Textures/white1x1.dds",
 		L"../../Textures/grasscube1024.dds",
 		L"../../Textures/bricks.dds",
-		L"../../Textures/dashboard.dds" // ##
+		L"../../Textures/dashboard.dds",
+		L"../../Textures/playerHealth.dds",
+		L"../../Textures/enemyHealth.dds"
 	};
 
 
@@ -198,7 +208,7 @@ void SimpleWar::BuildMaterials()
 	auto sky = std::make_unique<Material>();
 	sky->Name = "sky";
 	sky->MatCBIndex = 3;
-	sky->DiffuseSrvHeapIndex = 4+1;
+	sky->DiffuseSrvHeapIndex = 5+2; //##
 	sky->DiffuseAlbedo = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
 	sky->FresnelR0 = XMFLOAT3(0.1f, 0.1f, 0.1f);
 	sky->Roughness = 1.0f;
@@ -219,7 +229,6 @@ void SimpleWar::BuildMaterials()
 	stoneMat->FresnelR0 = XMFLOAT3(0.1f, 0.1f, 0.1f);
 	stoneMat->Roughness = 0.01f;
 
-	//##
 	auto dashboardMat = std::make_unique<Material>();
 	dashboardMat->Name = "dashboard";
 	dashboardMat->MatCBIndex = 6;
@@ -228,6 +237,21 @@ void SimpleWar::BuildMaterials()
 	dashboardMat->FresnelR0 = XMFLOAT3(0.1f, 0.1f, 0.1f);
 	dashboardMat->Roughness = 1.0f;
 
+	auto playerHealthMat = std::make_unique<Material>();
+	playerHealthMat->Name = "playerHealth";
+	playerHealthMat->MatCBIndex = 7;
+	playerHealthMat->DiffuseSrvHeapIndex = 5;
+	playerHealthMat->DiffuseAlbedo = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+	playerHealthMat->FresnelR0 = XMFLOAT3(0.1f, 0.1f, 0.1f);
+	playerHealthMat->Roughness = 1.0f;
+	auto enemyHealthMat = std::make_unique<Material>();
+	enemyHealthMat->Name = "enemyHealth";
+	enemyHealthMat->MatCBIndex = 8;
+	enemyHealthMat->DiffuseSrvHeapIndex = 6;
+	enemyHealthMat->DiffuseAlbedo = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+	enemyHealthMat->FresnelR0 = XMFLOAT3(0.1f, 0.1f, 0.1f);
+	enemyHealthMat->Roughness = 1.0f;
+
 	mMaterials["bricks0"] = std::move(bricks0);
 	mMaterials["tile0"] = std::move(tile0);
 	mMaterials["mirror0"] = std::move(mirror0);
@@ -235,6 +259,8 @@ void SimpleWar::BuildMaterials()
 	mMaterials["skullMat"] = std::move(skullMat);
 	mMaterials["stone"] = std::move(stoneMat);
 	mMaterials["dashboard"] = std::move(dashboardMat);
+	mMaterials["playerHealth"] = std::move(playerHealthMat);
+	mMaterials["enemyHealth"] = std::move(enemyHealthMat);
 }
 
 void SimpleWar::BuildRenderItems()
@@ -380,9 +406,9 @@ void SimpleWar::BuildRenderItems()
 
 	auto playerHealthRitem = std::make_unique<RenderItem>();
 	playerHealthRitem->World = MathHelper::Identity4x4();
-	XMStoreFloat4x4(&playerHealthRitem->TexTransform, XMMatrixScaling(2.0f, 5.0f, 5.0f));
+	XMStoreFloat4x4(&playerHealthRitem->TexTransform, XMMatrixScaling(1.0f, 1.0f, 1.0f));
 	playerHealthRitem->ObjCBIndex = objCBIndex++;
-	playerHealthRitem->Mat = mMaterials["stone"].get();
+	playerHealthRitem->Mat = mMaterials["playerHealth"].get();
 	playerHealthRitem->Geo = mGeometries["shapeGeo"].get();
 	playerHealthRitem->PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 	playerHealthRitem->IndexCount = playerHealthRitem->Geo->DrawArgs["box"].IndexCount;
@@ -393,9 +419,9 @@ void SimpleWar::BuildRenderItems()
 
 	auto enemyHealthRitem = std::make_unique<RenderItem>();
 	enemyHealthRitem->World = MathHelper::Identity4x4();
-	XMStoreFloat4x4(&enemyHealthRitem->TexTransform, XMMatrixScaling(2.0f, 5.0f, 5.0f));
+	XMStoreFloat4x4(&enemyHealthRitem->TexTransform, XMMatrixScaling(1.0f, 1.0f, 1.0f));
 	enemyHealthRitem->ObjCBIndex = objCBIndex++;
-	enemyHealthRitem->Mat = mMaterials["stone"].get();
+	enemyHealthRitem->Mat = mMaterials["enemyHealth"].get();
 	enemyHealthRitem->Geo = mGeometries["shapeGeo"].get();
 	enemyHealthRitem->PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 	enemyHealthRitem->IndexCount = enemyHealthRitem->Geo->DrawArgs["box"].IndexCount;
@@ -410,7 +436,7 @@ void SimpleWar::BuildDescriptorHeaps()
 	// Create the SRV heap.
 	//
 	D3D12_DESCRIPTOR_HEAP_DESC srvHeapDesc = {};
-	srvHeapDesc.NumDescriptors = 6+1; // ##
+	srvHeapDesc.NumDescriptors = 9;
 	srvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 	srvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 	ThrowIfFailed(md3dDevice->CreateDescriptorHeap(&srvHeapDesc, IID_PPV_ARGS(&mSrvDescriptorHeap)));
@@ -426,6 +452,8 @@ void SimpleWar::BuildDescriptorHeaps()
 	auto skyTex = mTextures["skyCubeMap"]->Resource;
 	auto stoneTex = mTextures["stoneMap"]->Resource;
 	auto dashboardTex = mTextures["dashboardMap"]->Resource;
+	auto playerHealthTex = mTextures["playerHealthMap"]->Resource;
+	auto enemyHealthTex = mTextures["enemyHealthMap"]->Resource;
 
 	// first descriptor 0
 	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
@@ -458,13 +486,25 @@ void SimpleWar::BuildDescriptorHeaps()
 	srvDesc.Texture2D.MipLevels = stoneTex->GetDesc().MipLevels;
 	md3dDevice->CreateShaderResourceView(stoneTex.Get(), &srvDesc, hDescriptor);
 
-	// next descriptor 4 ##
+	// next descriptor 4
 	hDescriptor.Offset(1, mCbvSrvUavDescriptorSize);
 	srvDesc.Format = dashboardTex->GetDesc().Format;
 	srvDesc.Texture2D.MipLevels = dashboardTex->GetDesc().MipLevels;
 	md3dDevice->CreateShaderResourceView(dashboardTex.Get(), &srvDesc, hDescriptor);
 
-	// next descriptor 5
+	// next descriptor 5 
+	hDescriptor.Offset(1, mCbvSrvUavDescriptorSize);
+	srvDesc.Format = playerHealthTex->GetDesc().Format;
+	srvDesc.Texture2D.MipLevels = playerHealthTex->GetDesc().MipLevels;
+	md3dDevice->CreateShaderResourceView(playerHealthTex.Get(), &srvDesc, hDescriptor);
+
+	// next descriptor 6 
+	hDescriptor.Offset(1, mCbvSrvUavDescriptorSize);
+	srvDesc.Format = enemyHealthTex->GetDesc().Format;
+	srvDesc.Texture2D.MipLevels = enemyHealthTex->GetDesc().MipLevels;
+	md3dDevice->CreateShaderResourceView(enemyHealthTex.Get(), &srvDesc, hDescriptor);
+
+	// next descriptor 7
 	hDescriptor.Offset(1, mCbvSrvUavDescriptorSize);
 
 	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURECUBE;
@@ -475,7 +515,7 @@ void SimpleWar::BuildDescriptorHeaps()
 	md3dDevice->CreateShaderResourceView(skyTex.Get(), &srvDesc, hDescriptor);
 
 
-	mSkyTexHeapIndex = 4 + 1; // ##
+	mSkyTexHeapIndex = 7; 
 	mDynamicTexHeapIndex = mSkyTexHeapIndex + 1;
 
 	auto srvCpuStart = mSrvDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
@@ -503,7 +543,7 @@ void SimpleWar::BuildRootSignature()
 	texTable0.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0, 0);
 
 	CD3DX12_DESCRIPTOR_RANGE texTable1;
-	texTable1.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 5, 1, 0);
+	texTable1.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 5+3, 1, 0);
 
 	// Root parameter can be a table, root descriptor or root constants.
 	CD3DX12_ROOT_PARAMETER slotRootParameter[5];
@@ -653,7 +693,7 @@ void SimpleWar::Update(const GameTimer& gt)
 	mSkullRitem->NumFramesDirty = gNumFrameResources;
 
 	if (mPlayer.intersect(mEnemySkull))
-		if (mExplodeDelay_secs > 5.0f)  mExplodeDelay_secs = 0.5f;
+		setExploSound();
 
 	mEnemySkull.setPosition(
 		3.0f, 1.0f, 2.0f

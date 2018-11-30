@@ -13,6 +13,7 @@
 #include "CubeRenderTarget.h"
 #include  "SimpleAudio.h"
 #include  "Enemy.h"
+#include  "Player.h"
 using Microsoft::WRL::ComPtr;
 using namespace DirectX;
 using namespace DirectX::PackedVector;

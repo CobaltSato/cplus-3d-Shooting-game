@@ -169,6 +169,7 @@
     <ClInclude Include="constants.h" />
     <ClInclude Include="Enemy.h" />
     <ClInclude Include="CollisionEngine.h" />
+    <ClInclude Include="Player.h" />
     <ClInclude Include="SimpleAudio.h" />
     <ClInclude Include="CubeRenderTarget.h" />
     <ClInclude Include="FrameResource.h" />

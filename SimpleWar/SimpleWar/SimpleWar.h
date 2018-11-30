@@ -23,14 +23,14 @@ public:
 	SimpleWar(const SimpleWar& rhs) = delete;
 	SimpleWar& operator=(const SimpleWar& rhs) = delete;
 	~SimpleWar() {};
-    void LoadTextures()override;
+	void LoadTextures()override;
 	void BuildSkullGeometry();
 
 	// framework methods
 	virtual void OnKeyboardInput(const GameTimer& gt) override;
 	virtual void OnMouseMove(WPARAM btnState, int x, int y);
-    virtual bool Initialize()override;
-    virtual void Update(const GameTimer& gt)override;
+	virtual bool Initialize()override;
+	virtual void Update(const GameTimer& gt)override;
 	virtual void BuildGeometry()override {
 		BuildSkullGeometry();
 		BuildShapeGeometry();
@@ -48,12 +48,21 @@ private:
 	int mPlayerRenderIdx = 2;
 	const float PLAYER_RADIUS = 1.5f;
 
-	//Enemy mEnemySkull;
-	CollisionEngine::GameObject mEnemySkull;
-	CollisionEngine::GameObject mPlayer;
+	Enemy mEnemySkull;
+	//CollisionEngine::GameObject mEnemySkull;
+	//CollisionEngine::GameObject mPlayer;
+	Player mPlayer;
 
 	int mCurrCameraDir = 1; // tracking camera direction
 	const float mCollisionDiscount = 0.85f;
 	float mExplodeDelay_secs = 5.1f;
+
+	void setExploSound() {
+		if (mExplodeDelay_secs > 5.0f)
+			mExplodeDelay_secs = 0.5f;
+		//testLife--;
+		//if (testLife < 0) testLife = 0;
+	}
+	void UpdateDashboard();
 };
 #endif
